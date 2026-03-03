@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AllThings Automated – Your full-service agency for electrical work, home automation, smart networks, and workflow automation. We power the future." />
+  <title>AllThings Automated | Smart Services Agency</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ========== NAVIGATION ========== -->
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="index.html" class="nav__logo">
+        <span class="logo-icon">⚡</span>
+        <span>AllThings<strong>Automated</strong></span>
+      </a>
+
+      <ul class="nav__menu" id="navMenu">
+        <li><a href="index.html" class="nav__link active">Home</a></li>
+        <li><a href="pages/services.html" class="nav__link">Services</a></li>
+        <li><a href="pages/portfolio.html" class="nav__link">Portfolio</a></li>
+        <li><a href="pages/about.html" class="nav__link">About</a></li>
+        <li><a href="pages/contact.html" class="nav__link">Contact</a></li>
+      </ul>
+
+      <a href="pages/contact.html" class="btn btn--primary nav__cta">Get a Free Quote</a>
+
+      <button class="nav__toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div class="hero__bg-grid"></div>
+    <div class="container hero__content">
+      <div class="hero__badge">
+        <span class="badge-dot"></span> Serving homes &amp; businesses since 2015
+      </div>
+      <h1 class="hero__title">
+        We Automate<br />
+        <span class="gradient-text">Everything.</span>
+      </h1>
+      <p class="hero__subtitle">
+        From electrical installations to smart-home systems, network infrastructure,
+        and end-to-end workflow automation — we engineer solutions that save time,
+        cut costs, and keep you ahead.
+      </p>
+      <div class="hero__actions">
+        <a href="pages/services.html" class="btn btn--primary btn--lg">Explore Services</a>
+        <a href="pages/portfolio.html" class="btn btn--ghost btn--lg">View Our Work</a>
+      </div>
+      <div class="hero__stats">
+        <div class="stat">
+          <span class="stat__number" data-target="500">0</span><span>+</span>
+          <span class="stat__label">Projects Completed</span>
+        </div>
+        <div class="stat">
+          <span class="stat__number" data-target="98">0</span><span>%</span>
+          <span class="stat__label">Client Satisfaction</span>
+        </div>
+        <div class="stat">
+          <span class="stat__number" data-target="10">0</span><span>+</span>
+          <span class="stat__label">Years Experience</span>
+        </div>
+        <div class="stat">
+          <span class="stat__number" data-target="40">0</span><span>%</span>
+          <span class="stat__label">Avg. Cost Savings</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero__scroll-indicator">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ========== MARQUEE STRIP ========== -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span>⚡ Electrical</span>
+      <span>🏠 Smart Homes</span>
+      <span>🌐 Networks</span>
+      <span>🤖 Automation</span>
+      <span>🔧 Maintenance</span>
+      <span>📱 Smart Controls</span>
+      <span>🔒 Security Systems</span>
+      <span>💡 LED Lighting</span>
+      <span>⚡ Electrical</span>
+      <span>🏠 Smart Homes</span>
+      <span>🌐 Networks</span>
+      <span>🤖 Automation</span>
+      <span>🔧 Maintenance</span>
+      <span>📱 Smart Controls</span>
+      <span>🔒 Security Systems</span>
+      <span>💡 LED Lighting</span>
+    </div>
+  </div>
+
+  <!-- ========== SERVICES OVERVIEW ========== -->
+  <section class="section services-overview" id="services">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">What We Do</span>
+        <h2 class="section__title">Full-Spectrum Tech Services</h2>
+        <p class="section__subtitle">
+          One agency for every smart-tech need. We handle the complex so you don't have to.
+        </p>
+      </div>
+
+      <div class="services-grid">
+
+        <div class="service-card service-card--featured" data-aos="fade-up">
+          <div class="service-card__icon">⚡</div>
+          <h3>Electrical Services</h3>
+          <p>Licensed electricians for residential &amp; commercial installs, panel upgrades, wiring, EV chargers, and emergency repairs.</p>
+          <ul class="service-card__features">
+            <li>Panel upgrades &amp; rewiring</li>
+            <li>EV charger installation</li>
+            <li>Commercial electrical fit-outs</li>
+            <li>24/7 emergency call-outs</li>
+          </ul>
+          <a href="pages/services.html#electrical" class="service-card__link">Learn more →</a>
+        </div>
+
+        <div class="service-card" data-aos="fade-up" data-aos-delay="100">
+          <div class="service-card__icon">🏠</div>
+          <h3>Home Automation</h3>
+          <p>Turn any home into a smart home with integrated lighting, climate, security, and entertainment systems.</p>
+          <ul class="service-card__features">
+            <li>Voice &amp; app control</li>
+            <li>Smart lighting &amp; climate</li>
+            <li>Automated blinds &amp; locks</li>
+            <li>Energy monitoring</li>
+          </ul>
+          <a href="pages/services.html#home-automation" class="service-card__link">Learn more →</a>
+        </div>
+
+        <div class="service-card" data-aos="fade-up" data-aos-delay="200">
+          <div class="service-card__icon">🌐</div>
+          <h3>Network Infrastructure</h3>
+          <p>Enterprise-grade networking for homes and businesses — fast, secure, and always connected.</p>
+          <ul class="service-card__features">
+            <li>Structured cabling &amp; LAN</li>
+            <li>Wi-Fi mesh systems</li>
+            <li>Firewall &amp; VPN setup</li>
+            <li>CCTV &amp; IP cameras</li>
+          </ul>
+          <a href="pages/services.html#networks" class="service-card__link">Learn more →</a>
+        </div>
+
+        <div class="service-card" data-aos="fade-up" data-aos-delay="300">
+          <div class="service-card__icon">🤖</div>
+          <h3>Workflow Automation</h3>
+          <p>Automate repetitive business processes with custom integrations, scripts, and AI-powered pipelines.</p>
+          <ul class="service-card__features">
+            <li>Process &amp; task automation</li>
+            <li>CRM &amp; tool integrations</li>
+            <li>Custom bots &amp; scripts</li>
+            <li>AI-assisted workflows</li>
+          </ul>
+          <a href="pages/services.html#workflow" class="service-card__link">Learn more →</a>
+        </div>
+
+        <div class="service-card" data-aos="fade-up" data-aos-delay="400">
+          <div class="service-card__icon">🔒</div>
+          <h3>Security Systems</h3>
+          <p>Comprehensive security solutions from CCTV to access control and alarm systems for total peace of mind.</p>
+          <ul class="service-card__features">
+            <li>CCTV &amp; remote monitoring</li>
+            <li>Smart alarm systems</li>
+            <li>Access control &amp; intercoms</li>
+            <li>24/7 monitoring options</li>
+          </ul>
+          <a href="pages/services.html#security" class="service-card__link">Learn more →</a>
+        </div>
+
+        <div class="service-card service-card--cta" data-aos="fade-up" data-aos-delay="500">
+          <div class="service-card__icon">💬</div>
+          <h3>Not sure what you need?</h3>
+          <p>Book a free consultation and our experts will assess your needs and build a custom solution.</p>
+          <a href="pages/contact.html" class="btn btn--primary">Book Free Consultation</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="section how-it-works">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Our Process</span>
+        <h2 class="section__title">From Idea to Automation</h2>
+        <p class="section__subtitle">A simple, transparent process that keeps you informed every step of the way.</p>
+      </div>
+      <div class="process-steps">
+        <div class="step" data-aos="fade-right">
+          <div class="step__number">01</div>
+          <div class="step__content">
+            <h3>Discovery &amp; Consultation</h3>
+            <p>We listen to your goals, assess your existing setup, and identify opportunities to automate and improve.</p>
+          </div>
+        </div>
+        <div class="step" data-aos="fade-right" data-aos-delay="100">
+          <div class="step__number">02</div>
+          <div class="step__content">
+            <h3>Design &amp; Planning</h3>
+            <p>Our engineers design a tailored solution with full diagrams, timelines, and transparent pricing — no surprises.</p>
+          </div>
+        </div>
+        <div class="step" data-aos="fade-right" data-aos-delay="200">
+          <div class="step__number">03</div>
+          <div class="step__content">
+            <h3>Installation &amp; Build</h3>
+            <p>We install, configure, and test every component to the highest standard, with minimal disruption to your day.</p>
+          </div>
+        </div>
+        <div class="step" data-aos="fade-right" data-aos-delay="300">
+          <div class="step__number">04</div>
+          <div class="step__content">
+            <h3>Training &amp; Handover</h3>
+            <p>We walk you through your new system, provide full documentation, and remain on call for ongoing support.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURED PROJECTS ========== -->
+  <section class="section projects-preview">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Portfolio</span>
+        <h2 class="section__title">Recent Work We're Proud Of</h2>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card project-card--large" data-aos="zoom-in">
+          <div class="project-card__img project-card__img--1"></div>
+          <div class="project-card__info">
+            <span class="project-card__tag">Smart Home</span>
+            <h3>Luxury Smart Villa — Full Automation</h3>
+            <p>Voice-controlled lighting, climate, security, and AV across 6,000 sq ft. 38% energy savings achieved.</p>
+            <a href="pages/portfolio.html" class="project-card__link">View case study →</a>
+          </div>
+        </div>
+        <div class="project-card" data-aos="zoom-in" data-aos-delay="100">
+          <div class="project-card__img project-card__img--2"></div>
+          <div class="project-card__info">
+            <span class="project-card__tag">Network</span>
+            <h3>Office Campus Network Overhaul</h3>
+            <p>Structured cabling, Wi-Fi 6, firewall and VPN for 200-seat corporate campus.</p>
+            <a href="pages/portfolio.html" class="project-card__link">View case study →</a>
+          </div>
+        </div>
+        <div class="project-card" data-aos="zoom-in" data-aos-delay="200">
+          <div class="project-card__img project-card__img--3"></div>
+          <div class="project-card__info">
+            <span class="project-card__tag">Workflow Automation</span>
+            <h3>Field Service Workflow Automation</h3>
+            <p>Automated job scheduling, invoicing, and reporting for a regional trade business — saving 20 hrs/week.</p>
+            <a href="pages/portfolio.html" class="project-card__link">View case study →</a>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-xl">
+        <a href="pages/portfolio.html" class="btn btn--outline btn--lg">See All Projects</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TESTIMONIALS ========== -->
+  <section class="section testimonials">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Testimonials</span>
+        <h2 class="section__title">What Our Clients Say</h2>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card" data-aos="fade-up">
+          <div class="testimonial-card__stars">★★★★★</div>
+          <p class="testimonial-card__text">"AllThings Automated transformed our office with smart lighting and a complete network overhaul. Professional, clean, and on time. Couldn't recommend them more."</p>
+          <div class="testimonial-card__author">
+            <div class="author-avatar" style="background:#6C63FF">MR</div>
+            <div>
+              <strong>Marcus Reed</strong>
+              <span>CEO, Reed Financial Group</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="100">
+          <div class="testimonial-card__stars">★★★★★</div>
+          <p class="testimonial-card__text">"Our smart home installation was seamless. The team automated everything — from our front gate to every light and blind in the house. It's like living in the future."</p>
+          <div class="testimonial-card__author">
+            <div class="author-avatar" style="background:#00C9A7">SP</div>
+            <div>
+              <strong>Sarah Parker</strong>
+              <span>Homeowner, Brighton</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="200">
+          <div class="testimonial-card__stars">★★★★★</div>
+          <p class="testimonial-card__text">"They automated our entire job dispatch workflow. What used to take my admin team hours every morning now runs itself. Game-changer for our plumbing business."</p>
+          <div class="testimonial-card__author">
+            <div class="author-avatar" style="background:#FF6584">DT</div>
+            <div>
+              <strong>Dave Thompson</strong>
+              <span>Director, Thompson Plumbing &amp; Heating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CTA BAND ========== -->
+  <section class="cta-band">
+    <div class="container cta-band__inner">
+      <div>
+        <h2>Ready to automate your world?</h2>
+        <p>Talk to our team today — free consultations, no obligation.</p>
+      </div>
+      <a href="pages/contact.html" class="btn btn--white btn--lg">Start Your Project</a>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a href="index.html" class="nav__logo">
+          <span class="logo-icon">⚡</span>
+          <span>AllThings<strong>Automated</strong></span>
+        </a>
+        <p>Powering smarter homes, businesses, and workflows since 2015. Licensed, insured, and always available.</p>
+        <div class="footer__socials">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Instagram">in</a>
+          <a href="#" aria-label="LinkedIn">li</a>
+          <a href="#" aria-label="Twitter">tw</a>
+        </div>
+      </div>
+      <div class="footer__links">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="pages/services.html#electrical">Electrical</a></li>
+          <li><a href="pages/services.html#home-automation">Home Automation</a></li>
+          <li><a href="pages/services.html#networks">Networks</a></li>
+          <li><a href="pages/services.html#workflow">Workflow Automation</a></li>
+          <li><a href="pages/services.html#security">Security Systems</a></li>
+        </ul>
+      </div>
+      <div class="footer__links">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="pages/about.html">About Us</a></li>
+          <li><a href="pages/portfolio.html">Portfolio</a></li>
+          <li><a href="pages/contact.html">Contact</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div class="footer__contact">
+        <h4>Contact</h4>
+        <p>📞 <a href="tel:+441234567890">+44 123 456 7890</a></p>
+        <p>📧 <a href="mailto:hello@allthingsautomated.co.uk">hello@allthingsautomated.co.uk</a></p>
+        <p>📍 Unit 12, Tech Park, Manchester, M1 2AB</p>
+        <p>🕐 Mon–Fri: 8am–6pm | Emergency: 24/7</p>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>&copy; 2026 AllThings Automated Ltd. All rights reserved.</p>
+        <div>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
