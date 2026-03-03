@@ -1,3 +1,9 @@
+"""
+Google Maps scraper using the Places API (New) — v1 endpoint.
+More powerful, future-proof, and gives cleaner data than the legacy API.
+
+To enable: console.developers.google.com/apis/api/places.googleapis.com/overview
+"""
 import requests
 import time
 from typing import List, Dict, Optional
@@ -7,7 +13,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import GOOGLE_PLACES_API_KEY
 
 
-PLACES_BASE = "https://maps.googleapis.com/maps/api/place"
+NEW_PLACES_BASE = "https://places.googleapis.com/v1/places"
+GEOCODE_BASE = "https://maps.googleapis.com/maps/api/geocode/json"
+
+# Fields to request from the new API
+TEXT_SEARCH_FIELDS = ",".join([
+    "places.displayName",
+    "places.formattedAddress",
+    "places.nationalPhoneNumber",
+    "places.internationalPhoneNumber",
+    "places.websiteUri",
+    "places.rating",
+    "places.userRatingCount",
+    "places.businessStatus",
+    "places.types",
+    "places.location",
+    "places.id",
+])
+
+NEARBY_SEARCH_FIELDS = TEXT_SEARCH_FIELDS  # same fields
 
 
 def search_businesses(
@@ -17,17 +41,17 @@ def search_businesses(
     max_results: int = 60
 ) -> List[Dict]:
     """
-    Search Google Maps using Text Search + Nearby Search for maximum coverage.
-    Text Search works without Geocoding API. Nearby Search uses it if available.
+    Search Google Maps using the new Places API (v1).
+    Runs Text Search + Nearby Search for maximum coverage.
+    Geocoding is optional — Text Search works without it.
     """
     if not GOOGLE_PLACES_API_KEY:
         print("[Google Maps] No API key configured — skipping.")
         return []
 
-    # Geocoding is optional — Text Search works without it
     coords = _geocode(location)
     if not coords:
-        print("[Google Maps] Geocoding API not enabled — running Text Search only (still works great)")
+        print("[Google Maps] Geocoding unavailable — running Text Search only")
 
     text_results = _text_search(query, location, coords, max_results if not coords else max_results // 2)
 
@@ -47,121 +71,132 @@ def search_businesses(
 
 def _text_search(query: str, location: str, coords: Optional[Dict], max_results: int) -> List[Dict]:
     results = []
-    next_page_token = None
+    page_token = None
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+        "X-Goog-FieldMask": TEXT_SEARCH_FIELDS + ",nextPageToken",
+    }
 
     while len(results) < max_results:
-        if next_page_token:
-            params = {"pagetoken": next_page_token, "key": GOOGLE_PLACES_API_KEY}
-            time.sleep(2)
-        else:
-            params = {
-                "query": f"{query} in {location}",
-                "key": GOOGLE_PLACES_API_KEY,
+        body = {
+            "textQuery": f"{query} in {location}",
+            "maxResultCount": min(20, max_results - len(results)),
+        }
+        if coords:
+            body["locationBias"] = {
+                "circle": {
+                    "center": {"latitude": coords["lat"], "longitude": coords["lng"]},
+                    "radius": 50000.0,
+                }
             }
-            # Add location bias only when coords are available
-            if coords:
-                params["location"] = f"{coords['lat']},{coords['lng']}"
-                params["radius"] = 50000
+        if page_token:
+            body["pageToken"] = page_token
+            time.sleep(2)
 
-        resp = requests.get(f"{PLACES_BASE}/textsearch/json", params=params, timeout=10)
-        if resp.status_code != 200 or not resp.text.strip():
-            print(f"[Google Text Search] HTTP {resp.status_code} — Places API may not be enabled. Enable it at: console.cloud.google.com/apis/library/places-backend.googleapis.com")
+        resp = requests.post(f"{NEW_PLACES_BASE}:searchText", json=body, headers=headers, timeout=10)
+
+        if resp.status_code != 200:
+            data = resp.json() if resp.text.strip() else {}
+            err = data.get("error", {})
+            print(f"[Google Text Search] Error {resp.status_code}: {err.get('message', resp.text[:200])}")
+            if err.get("status") == "PERMISSION_DENIED":
+                print("  → Enable 'Places API (New)' at: console.cloud.google.com/apis/library/places.googleapis.com")
             break
+
         data = resp.json()
+        for place in data.get("places", []):
+            results.append(_normalize_new(place, "google_text_search"))
 
-        if data.get("status") not in ("OK", "ZERO_RESULTS"):
-            print(f"[Google Text Search] Error: {data.get('status')} — {data.get('error_message', '')}")
-            break
-
-        for place in data.get("results", []):
-            detail = _get_place_detail(place["place_id"])
-            results.append(_normalize(place, detail, "google_text_search"))
-
-        next_page_token = data.get("next_page_token")
-        if not next_page_token or len(results) >= max_results:
+        page_token = data.get("nextPageToken")
+        if not page_token or len(results) >= max_results:
             break
 
     return results[:max_results]
 
 
 def _nearby_search(query: str, coords: Dict, radius_meters: int, max_results: int) -> List[Dict]:
-    """
-    Nearby Search finds businesses close to the coordinates — often surfaces
-    different results than Text Search, especially smaller local businesses.
-    """
     results = []
-    next_page_token = None
+    page_token = None
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+        "X-Goog-FieldMask": NEARBY_SEARCH_FIELDS + ",nextPageToken",
+    }
 
     while len(results) < max_results:
-        if next_page_token:
-            params = {"pagetoken": next_page_token, "key": GOOGLE_PLACES_API_KEY}
-            time.sleep(2)
-        else:
-            params = {
-                "keyword": query,
-                "location": f"{coords['lat']},{coords['lng']}",
-                "radius": radius_meters,
-                "key": GOOGLE_PLACES_API_KEY,
+        body = {
+            "textQuery": query,
+            "maxResultCount": min(20, max_results - len(results)),
+            "locationRestriction": {
+                "circle": {
+                    "center": {"latitude": coords["lat"], "longitude": coords["lng"]},
+                    "radius": float(radius_meters),
+                }
             }
+        }
+        if page_token:
+            body["pageToken"] = page_token
+            time.sleep(2)
 
-        resp = requests.get(f"{PLACES_BASE}/nearbysearch/json", params=params, timeout=10)
-        if resp.status_code != 200 or not resp.text.strip():
-            print(f"[Google Nearby Search] HTTP {resp.status_code} — skipping nearby search.")
+        resp = requests.post(f"{NEW_PLACES_BASE}:searchText", json=body, headers=headers, timeout=10)
+
+        if resp.status_code != 200:
+            data = resp.json() if resp.text.strip() else {}
+            print(f"[Google Nearby Search] Error {resp.status_code}: {data.get('error', {}).get('message', '')}")
             break
+
         data = resp.json()
+        for place in data.get("places", []):
+            results.append(_normalize_new(place, "google_nearby_search"))
 
-        if data.get("status") not in ("OK", "ZERO_RESULTS"):
-            print(f"[Google Nearby Search] Error: {data.get('status')} — {data.get('error_message', '')}")
-            break
-
-        for place in data.get("results", []):
-            detail = _get_place_detail(place["place_id"])
-            results.append(_normalize(place, detail, "google_nearby_search"))
-
-        next_page_token = data.get("next_page_token")
-        if not next_page_token or len(results) >= max_results:
+        page_token = data.get("nextPageToken")
+        if not page_token or len(results) >= max_results:
             break
 
     return results[:max_results]
 
 
 def _geocode(location: str) -> Optional[Dict]:
-    resp = requests.get(
-        "https://maps.googleapis.com/maps/api/geocode/json",
-        params={"address": location, "key": GOOGLE_PLACES_API_KEY},
-        timeout=10
-    )
-    data = resp.json()
-    if data.get("results"):
-        loc = data["results"][0]["geometry"]["location"]
-        return {"lat": loc["lat"], "lng": loc["lng"]}
+    try:
+        resp = requests.get(
+            GEOCODE_BASE,
+            params={"address": location, "key": GOOGLE_PLACES_API_KEY},
+            timeout=10
+        )
+        data = resp.json()
+        if data.get("status") == "OK" and data.get("results"):
+            loc = data["results"][0]["geometry"]["location"]
+            return {"lat": loc["lat"], "lng": loc["lng"]}
+    except Exception:
+        pass
     return None
 
 
-def _get_place_detail(place_id: str) -> Dict:
-    fields = "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,business_status,opening_hours,types"
-    resp = requests.get(
-        f"{PLACES_BASE}/details/json",
-        params={"place_id": place_id, "fields": fields, "key": GOOGLE_PLACES_API_KEY},
-        timeout=10
-    )
-    return resp.json().get("result", {})
+def _normalize_new(place: Dict, source: str) -> Dict:
+    """Normalize new Places API v1 response to our standard format."""
+    address = place.get("formattedAddress", "")
+    parts = [p.strip() for p in address.split(",")]
 
+    # Parse "123 Main St, Miami, FL 33101, USA"
+    street = parts[0] if parts else ""
+    city = parts[1] if len(parts) > 1 else ""
+    state_zip = parts[2].strip() if len(parts) > 2 else ""
+    state = state_zip.split(" ")[0] if state_zip else ""
+    zip_code = state_zip.split(" ")[1] if len(state_zip.split(" ")) > 1 else ""
 
-def _normalize(place: Dict, detail: Dict, source: str = "google_maps") -> Dict:
-    address_parts = detail.get("formatted_address", "").split(",")
     return {
         "source": source,
-        "business_name": detail.get("name") or place.get("name", ""),
-        "address": address_parts[0].strip() if address_parts else "",
-        "city": address_parts[1].strip() if len(address_parts) > 1 else "",
-        "state": address_parts[2].strip().split(" ")[0] if len(address_parts) > 2 else "",
-        "zip_code": address_parts[2].strip().split(" ")[-1] if len(address_parts) > 2 else "",
-        "phone": detail.get("formatted_phone_number", ""),
-        "website": detail.get("website", ""),
-        "google_rating": detail.get("rating"),
-        "google_review_count": detail.get("user_ratings_total"),
-        "business_status": detail.get("business_status", ""),
-        "categories": detail.get("types", []),
-        "raw_data": {**place, **detail},
+        "business_name": place.get("displayName", {}).get("text", ""),
+        "address": street,
+        "city": city,
+        "state": state,
+        "zip_code": zip_code,
+        "phone": place.get("nationalPhoneNumber") or place.get("internationalPhoneNumber", ""),
+        "website": place.get("websiteUri", ""),
+        "google_rating": place.get("rating"),
+        "google_review_count": place.get("userRatingCount"),
+        "business_status": place.get("businessStatus", ""),
+        "categories": place.get("types", []),
+        "raw_data": place,
     }
