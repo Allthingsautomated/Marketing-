@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}AI Lead Engine{% endblock %} — All Things Automated</title>
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">Lead Engine</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+        <span class="icon">📊</span> Dashboard
+      </a></li>
+      <li><a href="/leads" class="nav-link {% if '/leads' in request.url.path %}active{% endif %}">
+        <span class="icon">🎯</span> All Leads
+      </a></li>
+      <li><a href="/search" class="nav-link {% if '/search' in request.url.path %}active{% endif %}">
+        <span class="icon">🔍</span> Find Leads
+      </a></li>
+      <li><a href="/api/leads/export/csv" class="nav-link">
+        <span class="icon">📥</span> Export CSV
+      </a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <span class="version">v1.0 · All Things Automated</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+      <div class="top-actions">{% block top_actions %}{% endblock %}</div>
+    </div>
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

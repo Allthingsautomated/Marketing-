@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Find Leads{% endblock %}
+{% block page_title %}Find New Leads{% endblock %}
+
+{% block content %}
+<div class="card search-card">
+  <p class="search-desc">Tell the AI what type of business to find and where. It will scrape Google Maps + Yelp, analyze every website, and score each lead automatically.</p>
+
+  <form id="searchForm" onsubmit="startSearch(event)">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>What business type? *</label>
+        <input type="text" id="query" name="query" placeholder="e.g. restaurant, hair salon, dentist, contractor"
+               class="form-input" required />
+      </div>
+      <div class="form-group">
+        <label>Location *</label>
+        <input type="text" id="location" name="location" placeholder="e.g. Miami FL, Chicago, Austin Texas"
+               class="form-input" required />
+      </div>
+      <div class="form-group">
+        <label>Industry Label (optional)</label>
+        <input type="text" id="industry" name="industry" placeholder="e.g. Restaurant & Food"
+               class="form-input" />
+      </div>
+      <div class="form-group">
+        <label>Max leads per source</label>
+        <select id="max_per_source" name="max_per_source" class="form-input">
+          <option value="10">10 (fast)</option>
+          <option value="20" selected>20 (recommended)</option>
+          <option value="50">50 (thorough)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Sources</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="sources" value="google_maps" checked /> Google Maps
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" name="sources" value="yelp" checked /> Yelp
+        </label>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-large" id="searchBtn">
+      🔍 Find Leads Now
+    </button>
+  </form>
+
+  <div id="searchStatus" class="search-status hidden">
+    <div class="spinner"></div>
+    <div id="statusMsg">Starting search...</div>
+  </div>
+</div>
+
+<!-- Quick Searches -->
+<div class="card">
+  <h3>Quick Search Ideas</h3>
+  <div class="quick-searches">
+    {% for item in [
+      ('restaurants', 'Miami FL'),
+      ('hair salon', 'Los Angeles CA'),
+      ('dentist', 'Houston TX'),
+      ('real estate agent', 'Phoenix AZ'),
+      ('gym fitness', 'New York NY'),
+      ('plumber', 'Dallas TX'),
+      ('auto repair', 'Chicago IL'),
+      ('lawyer attorney', 'Atlanta GA'),
+    ] %}
+    <button class="quick-btn" onclick="fillSearch('{{ item[0] }}', '{{ item[1] }}')">
+      {{ item[0] }} · {{ item[1] }}
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function startSearch(e) {
+  e.preventDefault();
+  const query = document.getElementById("query").value;
+  const location = document.getElementById("location").value;
+  const industry = document.getElementById("industry").value;
+  const maxPerSource = document.getElementById("max_per_source").value;
+  const sources = [...document.querySelectorAll('input[name="sources"]:checked')].map(el => el.value).join(",");
+
+  const fd = new FormData();
+  fd.append("query", query);
+  fd.append("location", location);
+  fd.append("industry", industry);
+  fd.append("max_per_source", maxPerSource);
+  fd.append("sources", sources);
+
+  document.getElementById("searchBtn").disabled = true;
+  document.getElementById("searchStatus").classList.remove("hidden");
+  document.getElementById("statusMsg").textContent = `Searching for "${query}" in "${location}"...`;
+
+  const r = await fetch("/api/search", {method: "POST", body: fd});
+  const data = await r.json();
+
+  document.getElementById("statusMsg").textContent =
+    data.message + " This runs in the background — check All Leads in 1-2 minutes.";
+  showToast("Search started! Leads will appear automatically.");
+
+  setTimeout(() => {
+    window.location.href = "/leads";
+  }, 3000);
+}
+
+function fillSearch(query, location) {
+  document.getElementById("query").value = query;
+  document.getElementById("location").value = location;
+  document.getElementById("query").focus();
+}
+</script>
+{% endblock %}

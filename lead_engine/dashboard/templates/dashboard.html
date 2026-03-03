@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block top_actions %}
+  <a href="/search" class="btn btn-primary">+ Find New Leads</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-label">Total Leads</div>
+  </div>
+  <div class="stat-card new">
+    <div class="stat-value">{{ stats.new }}</div>
+    <div class="stat-label">New</div>
+  </div>
+  <div class="stat-card contacted">
+    <div class="stat-value">{{ stats.contacted }}</div>
+    <div class="stat-label">Contacted</div>
+  </div>
+  <div class="stat-card qualified">
+    <div class="stat-value">{{ stats.qualified }}</div>
+    <div class="stat-label">Qualified</div>
+  </div>
+  <div class="stat-card converted">
+    <div class="stat-value">{{ stats.converted }}</div>
+    <div class="stat-label">Converted</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- Top Leads -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Top Leads by AI Score</h2>
+      <a href="/leads" class="link-sm">View All →</a>
+    </div>
+    <div class="lead-list">
+      {% for lead in top_leads %}
+      <a href="/leads/{{ lead.id }}" class="lead-row">
+        <div class="lead-info">
+          <div class="lead-name">{{ lead.business_name }}</div>
+          <div class="lead-meta">{{ lead.industry }} · {{ lead.city }}, {{ lead.state }}</div>
+        </div>
+        <div class="lead-score-badge score-{{ 'high' if lead.ai_score >= 70 else 'medium' if lead.ai_score >= 40 else 'low' }}">
+          {{ "%.0f"|format(lead.ai_score) }}
+        </div>
+      </a>
+      {% else %}
+      <div class="empty-state">No leads yet. <a href="/search">Find some →</a></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Searches -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Recent Searches</h2>
+      <a href="/search" class="link-sm">New Search →</a>
+    </div>
+    <div class="session-list">
+      {% for s in recent_sessions %}
+      <div class="session-row">
+        <div class="session-info">
+          <div class="session-query">{{ s.query }} in {{ s.location }}</div>
+          <div class="session-meta">{{ s.leads_found }} leads · Avg score: {{ "%.0f"|format(s.avg_score) }}</div>
+        </div>
+        <div class="session-time">{{ s.created_at.strftime('%b %d') }}</div>
+      </div>
+      {% else %}
+      <div class="empty-state">No searches yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Pipeline Visual -->
+<div class="card pipeline-card">
+  <div class="card-header"><h2>Lead Pipeline</h2></div>
+  <div class="pipeline">
+    {% for stage, count in [('New', stats.new), ('Contacted', stats.contacted), ('Qualified', stats.qualified), ('Converted', stats.converted)] %}
+    <div class="pipeline-stage">
+      <div class="pipeline-count">{{ count }}</div>
+      <div class="pipeline-bar">
+        <div class="pipeline-fill" style="height: {{ [count * 10, 100]|min }}px"></div>
+      </div>
+      <div class="pipeline-label">{{ stage }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

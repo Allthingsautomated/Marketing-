@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Leads{% endblock %}
+{% block page_title %}All Leads ({{ total }}){% endblock %}
+
+{% block top_actions %}
+  <a href="/api/leads/export/csv" class="btn btn-secondary">Export CSV</a>
+  <a href="/search" class="btn btn-primary">+ Find More</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card filters-card">
+  <form class="filters-form" method="get" action="/leads">
+    <select name="status" class="filter-input">
+      <option value="">All Statuses</option>
+      {% for s in ['new', 'contacted', 'qualified', 'converted', 'lost'] %}
+      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="industry" class="filter-input">
+      <option value="">All Industries</option>
+      {% for ind in industries %}
+      <option value="{{ ind }}" {% if filters.industry == ind %}selected{% endif %}>{{ ind }}</option>
+      {% endfor %}
+    </select>
+
+    <input type="number" name="min_score" placeholder="Min Score (0-100)"
+           value="{{ filters.min_score or '' }}" class="filter-input" min="0" max="100" />
+
+    <button type="submit" class="btn btn-primary">Filter</button>
+    <a href="/leads" class="btn btn-secondary">Clear</a>
+  </form>
+</div>
+
+<!-- Lead Table -->
+<div class="card table-card">
+  <table class="leads-table">
+    <thead>
+      <tr>
+        <th>Business</th>
+        <th>Industry</th>
+        <th>Location</th>
+        <th>Contact</th>
+        <th>AI Score</th>
+        <th>Opportunity</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lead in leads %}
+      <tr>
+        <td>
+          <a href="/leads/{{ lead.id }}" class="lead-name-link">{{ lead.business_name }}</a>
+          {% if lead.website %}<a href="{{ lead.website }}" target="_blank" class="ext-link" title="Visit website">↗</a>{% endif %}
+        </td>
+        <td><span class="tag">{{ lead.industry or '—' }}</span></td>
+        <td>{{ lead.city }}, {{ lead.state }}</td>
+        <td>
+          {% if lead.phone %}<div class="contact-info">📞 {{ lead.phone }}</div>{% endif %}
+          {% if lead.email %}<div class="contact-info">✉️ {{ lead.email }}</div>{% endif %}
+        </td>
+        <td>
+          <div class="score-bar">
+            <div class="score-fill {{ 'high' if lead.ai_score >= 70 else 'medium' if lead.ai_score >= 40 else 'low' }}"
+                 style="width: {{ lead.ai_score or 0 }}%"></div>
+            <span class="score-num">{{ "%.0f"|format(lead.ai_score or 0) }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="score-bar">
+            <div class="score-fill opportunity" style="width: {{ lead.opportunity_score or 0 }}%"></div>
+            <span class="score-num">{{ "%.0f"|format(lead.opportunity_score or 0) }}</span>
+          </div>
+        </td>
+        <td>
+          <select class="status-select" data-lead-id="{{ lead.id }}" onchange="updateStatus(this)">
+            {% for s in ['new', 'contacted', 'qualified', 'converted', 'lost'] %}
+            <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td>
+          <a href="/leads/{{ lead.id }}" class="btn btn-sm">View</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="empty-state">No leads found. <a href="/search">Run a search →</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if total > per_page %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/leads?page={{ page - 1 }}" class="btn btn-secondary">← Prev</a>
+  {% endif %}
+  <span class="page-info">Page {{ page }} of {{ (total // per_page) + 1 }}</span>
+  {% if page * per_page < total %}
+  <a href="/leads?page={{ page + 1 }}" class="btn btn-secondary">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function updateStatus(select) {
+  const leadId = select.dataset.leadId;
+  const status = select.value;
+  const fd = new FormData();
+  fd.append("status", status);
+  const r = await fetch(`/api/leads/${leadId}/status`, {method: "POST", body: fd});
+  const data = await r.json();
+  showToast(`Status updated to ${status}`);
+}
+</script>
+{% endblock %}
