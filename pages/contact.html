@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Contact AllThings Automated — get a free quote, book a consultation, or reach our 24/7 emergency line." />
+  <title>Contact | AllThings Automated</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="../index.html" class="nav__logo">
+        <span class="logo-icon">⚡</span>
+        <span>AllThings<strong>Automated</strong></span>
+      </a>
+      <ul class="nav__menu" id="navMenu">
+        <li><a href="../index.html" class="nav__link">Home</a></li>
+        <li><a href="services.html" class="nav__link">Services</a></li>
+        <li><a href="portfolio.html" class="nav__link">Portfolio</a></li>
+        <li><a href="about.html" class="nav__link">About</a></li>
+        <li><a href="contact.html" class="nav__link active">Contact</a></li>
+      </ul>
+      <a href="contact.html" class="btn btn--primary nav__cta">Get a Free Quote</a>
+      <button class="nav__toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero page-hero--short">
+    <div class="container">
+      <span class="section__tag">Contact Us</span>
+      <h1>Let's Talk About<br /><span class="gradient-text">Your Project.</span></h1>
+      <p>Free consultations available. No pushy sales, just honest advice and transparent pricing.</p>
+    </div>
+  </section>
+
+  <!-- CONTACT SECTION -->
+  <section class="section contact-section">
+    <div class="container contact-grid">
+
+      <!-- FORM -->
+      <div class="contact-form-wrap" data-aos="fade-right">
+        <h2>Send Us a Message</h2>
+        <p>Fill in the form and we'll get back to you within one business day.</p>
+
+        <form class="contact-form" id="contactForm" novalidate>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" placeholder="John" required />
+              <span class="form-error" id="firstNameError"></span>
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" placeholder="Smith" required />
+              <span class="form-error" id="lastNameError"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" placeholder="john@example.com" required />
+              <span class="form-error" id="emailError"></span>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" name="phone" placeholder="+44 7700 900000" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="serviceType">Service Interested In *</label>
+            <select id="serviceType" name="serviceType" required>
+              <option value="">Select a service...</option>
+              <option value="electrical">Electrical Services</option>
+              <option value="smart-home">Home Automation</option>
+              <option value="network">Network Infrastructure</option>
+              <option value="workflow">Workflow Automation</option>
+              <option value="security">Security Systems</option>
+              <option value="multiple">Multiple Services</option>
+              <option value="other">Other / Not Sure</option>
+            </select>
+            <span class="form-error" id="serviceTypeError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="budget">Approximate Budget</label>
+            <select id="budget" name="budget">
+              <option value="">Prefer not to say</option>
+              <option value="under-1k">Under £1,000</option>
+              <option value="1k-5k">£1,000 – £5,000</option>
+              <option value="5k-15k">£5,000 – £15,000</option>
+              <option value="15k-50k">£15,000 – £50,000</option>
+              <option value="50k+">£50,000+</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="message">Tell Us About Your Project *</label>
+            <textarea id="message" name="message" rows="5" placeholder="Describe your project, requirements, or any questions you have..." required></textarea>
+            <span class="form-error" id="messageError"></span>
+          </div>
+
+          <div class="form-group form-group--checkbox">
+            <label class="checkbox-label">
+              <input type="checkbox" id="consent" name="consent" required />
+              <span>I agree to AllThings Automated storing and processing my data to respond to my enquiry. <a href="#">Privacy Policy</a>.</span>
+            </label>
+            <span class="form-error" id="consentError"></span>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--lg btn--full" id="submitBtn">
+            Send My Enquiry
+          </button>
+
+          <div class="form-success" id="formSuccess" style="display:none">
+            <span>✅</span>
+            <div>
+              <strong>Message sent!</strong>
+              <p>Thanks for reaching out. We'll be in touch within one business day.</p>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- CONTACT INFO -->
+      <div class="contact-info" data-aos="fade-left">
+        <div class="contact-info-card">
+          <h3>Get in Touch Directly</h3>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon">📞</div>
+            <div>
+              <strong>Phone</strong>
+              <a href="tel:+441234567890">+44 123 456 7890</a>
+              <small>Mon–Fri 8am–6pm</small>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon">🚨</div>
+            <div>
+              <strong>Emergency Line</strong>
+              <a href="tel:+441234567891">+44 123 456 7891</a>
+              <small>Available 24/7 for electrical emergencies</small>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon">📧</div>
+            <div>
+              <strong>Email</strong>
+              <a href="mailto:hello@allthingsautomated.co.uk">hello@allthingsautomated.co.uk</a>
+              <small>We reply within 1 business day</small>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon">📍</div>
+            <div>
+              <strong>Office</strong>
+              <span>Unit 12, Tech Park</span>
+              <span>Manchester, M1 2AB</span>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon">🗓️</div>
+            <div>
+              <strong>Book a Site Visit</strong>
+              <span>We offer free on-site assessments for projects over £2,000.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUICK CONTACT CARDS -->
+        <div class="quick-contact-cards">
+          <div class="qc-card">
+            <span>⚡</span>
+            <div>
+              <strong>Electrical Emergency?</strong>
+              <a href="tel:+441234567891">Call our 24/7 line</a>
+            </div>
+          </div>
+          <div class="qc-card">
+            <span>💬</span>
+            <div>
+              <strong>Quick question?</strong>
+              <a href="#">Chat with us live</a>
+            </div>
+          </div>
+          <div class="qc-card">
+            <span>📋</span>
+            <div>
+              <strong>Existing client?</strong>
+              <a href="#">Access your portal</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section faq-section">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">FAQ</span>
+        <h2>Common Questions</h2>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item" data-aos="fade-up">
+          <button class="faq-question" aria-expanded="false">
+            How long does a typical smart home installation take?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <p>It depends on scope. A basic smart lighting and thermostat setup can be completed in a day. A full multi-room smart home with security and AV integration typically takes 3–7 days. We'll give you a precise timeline in your quote.</p>
+          </div>
+        </div>
+        <div class="faq-item" data-aos="fade-up" data-aos-delay="50">
+          <button class="faq-question" aria-expanded="false">
+            Are you licensed and insured?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes. We are NICEIC Approved Contractors, fully insured for public liability (£5m) and employers' liability. All electrical work is certified to BS 7671 and comes with an Electrical Installation Certificate.</p>
+          </div>
+        </div>
+        <div class="faq-item" data-aos="fade-up" data-aos-delay="100">
+          <button class="faq-question" aria-expanded="false">
+            Do you offer maintenance and support contracts?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <p>Absolutely. We offer annual maintenance plans for all systems we install, including remote monitoring, priority call-outs, and software updates for smart and automation systems.</p>
+          </div>
+        </div>
+        <div class="faq-item" data-aos="fade-up" data-aos-delay="150">
+          <button class="faq-question" aria-expanded="false">
+            Can you automate our existing business software?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <p>In most cases, yes. We work with CRMs, accounting tools, field service platforms, spreadsheets, and custom databases. We start with a free audit of your current setup and identify the best automation opportunities.</p>
+          </div>
+        </div>
+        <div class="faq-item" data-aos="fade-up" data-aos-delay="200">
+          <button class="faq-question" aria-expanded="false">
+            What areas do you cover?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <p>Our teams cover Greater Manchester, the North West, Yorkshire, and the Midlands for on-site work. Workflow automation, network consultancy, and remote support are available nationwide. Call us if you're unsure about your area.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a href="../index.html" class="nav__logo">
+          <span class="logo-icon">⚡</span>
+          <span>AllThings<strong>Automated</strong></span>
+        </a>
+        <p>Powering smarter homes, businesses, and workflows since 2015.</p>
+      </div>
+      <div class="footer__links">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="services.html#electrical">Electrical</a></li>
+          <li><a href="services.html#home-automation">Home Automation</a></li>
+          <li><a href="services.html#networks">Networks</a></li>
+          <li><a href="services.html#workflow">Workflow Automation</a></li>
+        </ul>
+      </div>
+      <div class="footer__links">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer__contact">
+        <h4>Contact</h4>
+        <p>📞 <a href="tel:+441234567890">+44 123 456 7890</a></p>
+        <p>📧 <a href="mailto:hello@allthingsautomated.co.uk">hello@allthingsautomated.co.uk</a></p>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>&copy; 2026 AllThings Automated Ltd. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>
