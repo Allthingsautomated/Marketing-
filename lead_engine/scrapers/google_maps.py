@@ -18,20 +18,22 @@ def search_businesses(
 ) -> List[Dict]:
     """
     Search Google Maps using Text Search + Nearby Search for maximum coverage.
-    Both searches use the same API key and free credit.
+    Text Search works without Geocoding API. Nearby Search uses it if available.
     """
     if not GOOGLE_PLACES_API_KEY:
         print("[Google Maps] No API key configured — skipping.")
         return []
 
+    # Geocoding is optional — Text Search works without it
     coords = _geocode(location)
     if not coords:
-        print(f"[Google Maps] Could not geocode: {location}")
-        return []
+        print("[Google Maps] Geocoding API not enabled — running Text Search only (still works great)")
 
-    # Run both search strategies and combine
-    text_results = _text_search(query, location, coords, max_results // 2)
-    nearby_results = _nearby_search(query, coords, radius_meters, max_results // 2)
+    text_results = _text_search(query, location, coords, max_results if not coords else max_results // 2)
+
+    nearby_results = []
+    if coords:
+        nearby_results = _nearby_search(query, coords, radius_meters, max_results // 2)
 
     combined = {r["business_name"]: r for r in text_results}
     for r in nearby_results:
@@ -39,11 +41,11 @@ def search_businesses(
             combined[r["business_name"]] = r
 
     results = list(combined.values())[:max_results]
-    print(f"[Google Maps] Text Search: {len(text_results)}, Nearby Search: {len(nearby_results)}, Combined unique: {len(results)}")
+    print(f"[Google Maps] Text: {len(text_results)}, Nearby: {len(nearby_results)}, Unique total: {len(results)}")
     return results
 
 
-def _text_search(query: str, location: str, coords: Dict, max_results: int) -> List[Dict]:
+def _text_search(query: str, location: str, coords: Optional[Dict], max_results: int) -> List[Dict]:
     results = []
     next_page_token = None
 
@@ -55,11 +57,16 @@ def _text_search(query: str, location: str, coords: Dict, max_results: int) -> L
             params = {
                 "query": f"{query} in {location}",
                 "key": GOOGLE_PLACES_API_KEY,
-                "location": f"{coords['lat']},{coords['lng']}",
-                "radius": 50000,
             }
+            # Add location bias only when coords are available
+            if coords:
+                params["location"] = f"{coords['lat']},{coords['lng']}"
+                params["radius"] = 50000
 
         resp = requests.get(f"{PLACES_BASE}/textsearch/json", params=params, timeout=10)
+        if resp.status_code != 200 or not resp.text.strip():
+            print(f"[Google Text Search] HTTP {resp.status_code} — Places API may not be enabled. Enable it at: console.cloud.google.com/apis/library/places-backend.googleapis.com")
+            break
         data = resp.json()
 
         if data.get("status") not in ("OK", "ZERO_RESULTS"):
@@ -98,6 +105,9 @@ def _nearby_search(query: str, coords: Dict, radius_meters: int, max_results: in
             }
 
         resp = requests.get(f"{PLACES_BASE}/nearbysearch/json", params=params, timeout=10)
+        if resp.status_code != 200 or not resp.text.strip():
+            print(f"[Google Nearby Search] HTTP {resp.status_code} — skipping nearby search.")
+            break
         data = resp.json()
 
         if data.get("status") not in ("OK", "ZERO_RESULTS"):
