@@ -17,45 +17,96 @@ def search_businesses(
     max_results: int = 60
 ) -> List[Dict]:
     """
-    Search Google Maps for businesses matching query + location.
-    Returns raw business data ready for AI scoring.
+    Search Google Maps using Text Search + Nearby Search for maximum coverage.
+    Both searches use the same API key and free credit.
     """
     if not GOOGLE_PLACES_API_KEY:
         print("[Google Maps] No API key configured — skipping.")
         return []
 
-    # First geocode the location
     coords = _geocode(location)
     if not coords:
         print(f"[Google Maps] Could not geocode: {location}")
         return []
 
+    # Run both search strategies and combine
+    text_results = _text_search(query, location, coords, max_results // 2)
+    nearby_results = _nearby_search(query, coords, radius_meters, max_results // 2)
+
+    combined = {r["business_name"]: r for r in text_results}
+    for r in nearby_results:
+        if r["business_name"] not in combined:
+            combined[r["business_name"]] = r
+
+    results = list(combined.values())[:max_results]
+    print(f"[Google Maps] Text Search: {len(text_results)}, Nearby Search: {len(nearby_results)}, Combined unique: {len(results)}")
+    return results
+
+
+def _text_search(query: str, location: str, coords: Dict, max_results: int) -> List[Dict]:
     results = []
     next_page_token = None
 
     while len(results) < max_results:
-        params = {
-            "query": f"{query} in {location}",
-            "key": GOOGLE_PLACES_API_KEY,
-            "type": "establishment",
-        }
         if next_page_token:
             params = {"pagetoken": next_page_token, "key": GOOGLE_PLACES_API_KEY}
-            time.sleep(2)  # Google requires delay before using next_page_token
+            time.sleep(2)
         else:
-            params["location"] = f"{coords['lat']},{coords['lng']}"
-            params["radius"] = radius_meters
+            params = {
+                "query": f"{query} in {location}",
+                "key": GOOGLE_PLACES_API_KEY,
+                "location": f"{coords['lat']},{coords['lng']}",
+                "radius": 50000,
+            }
 
         resp = requests.get(f"{PLACES_BASE}/textsearch/json", params=params, timeout=10)
         data = resp.json()
 
         if data.get("status") not in ("OK", "ZERO_RESULTS"):
-            print(f"[Google Maps] API error: {data.get('status')} — {data.get('error_message', '')}")
+            print(f"[Google Text Search] Error: {data.get('status')} — {data.get('error_message', '')}")
             break
 
         for place in data.get("results", []):
             detail = _get_place_detail(place["place_id"])
-            results.append(_normalize(place, detail))
+            results.append(_normalize(place, detail, "google_text_search"))
+
+        next_page_token = data.get("next_page_token")
+        if not next_page_token or len(results) >= max_results:
+            break
+
+    return results[:max_results]
+
+
+def _nearby_search(query: str, coords: Dict, radius_meters: int, max_results: int) -> List[Dict]:
+    """
+    Nearby Search finds businesses close to the coordinates — often surfaces
+    different results than Text Search, especially smaller local businesses.
+    """
+    results = []
+    next_page_token = None
+
+    while len(results) < max_results:
+        if next_page_token:
+            params = {"pagetoken": next_page_token, "key": GOOGLE_PLACES_API_KEY}
+            time.sleep(2)
+        else:
+            params = {
+                "keyword": query,
+                "location": f"{coords['lat']},{coords['lng']}",
+                "radius": radius_meters,
+                "key": GOOGLE_PLACES_API_KEY,
+            }
+
+        resp = requests.get(f"{PLACES_BASE}/nearbysearch/json", params=params, timeout=10)
+        data = resp.json()
+
+        if data.get("status") not in ("OK", "ZERO_RESULTS"):
+            print(f"[Google Nearby Search] Error: {data.get('status')} — {data.get('error_message', '')}")
+            break
+
+        for place in data.get("results", []):
+            detail = _get_place_detail(place["place_id"])
+            results.append(_normalize(place, detail, "google_nearby_search"))
 
         next_page_token = data.get("next_page_token")
         if not next_page_token or len(results) >= max_results:
@@ -87,10 +138,10 @@ def _get_place_detail(place_id: str) -> Dict:
     return resp.json().get("result", {})
 
 
-def _normalize(place: Dict, detail: Dict) -> Dict:
+def _normalize(place: Dict, detail: Dict, source: str = "google_maps") -> Dict:
     address_parts = detail.get("formatted_address", "").split(",")
     return {
-        "source": "google_maps",
+        "source": source,
         "business_name": detail.get("name") or place.get("name", ""),
         "address": address_parts[0].strip() if address_parts else "",
         "city": address_parts[1].strip() if len(address_parts) > 1 else "",

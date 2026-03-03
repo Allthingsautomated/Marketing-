@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 
 from scrapers.google_maps import search_businesses as google_search
-from scrapers.yelp_scraper import search_businesses as yelp_search
+from scrapers.yellow_pages import search_businesses as yp_search
 from scrapers.web_scraper import analyze_website
 from ai.scorer import batch_score_leads, get_learning_context
 from database import Lead, SearchSession, get_db
@@ -23,26 +23,26 @@ def run_search(
 ) -> List[Dict]:
     """
     Full pipeline: search → scrape websites → AI score → save to DB.
-    Returns list of scored leads.
+    Sources: google_maps (Text + Nearby Search), yellow_pages (free, no API).
     """
     if sources is None:
-        sources = ["google_maps", "yelp"]
+        sources = ["google_maps", "yellow_pages"]
 
     print(f"\n[Pipeline] Starting search: '{query}' in '{location}'")
     raw_leads = []
 
     # --- Step 1: Collect raw business data ---
     if "google_maps" in sources:
-        print("[Pipeline] Searching Google Maps...")
+        print("[Pipeline] Searching Google Maps (Text + Nearby)...")
         results = google_search(query, location, max_results=max_per_source)
         raw_leads.extend(results)
         print(f"[Pipeline] Google Maps: {len(results)} businesses found")
 
-    if "yelp" in sources:
-        print("[Pipeline] Searching Yelp...")
-        results = yelp_search(query, location, limit=max_per_source)
+    if "yellow_pages" in sources:
+        print("[Pipeline] Searching Yellow Pages...")
+        results = yp_search(query, location, max_results=max_per_source)
         raw_leads.extend(results)
-        print(f"[Pipeline] Yelp: {len(results)} businesses found")
+        print(f"[Pipeline] Yellow Pages: {len(results)} businesses found")
 
     # Deduplicate by business name + city
     raw_leads = _deduplicate(raw_leads)

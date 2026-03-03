@@ -5,4 +5,5 @@ __pycache__/
 *.db
 *.sqlite
 .DS_Store
-data/
+data/*.db
+data/*.sqlite
