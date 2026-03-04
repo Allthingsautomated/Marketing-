@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const authRoutes = require('./routes/auth');
 const contactsRoutes = require('./routes/contacts');
@@ -33,4 +34,9 @@ app.use('/api/integrations', verifyToken, integrationsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-app.listen(PORT, () => console.log(`CRM backend running on port ${PORT}`));
+// Serve React frontend in production
+const frontendDist = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDist));
+app.get('*', (req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
+
+app.listen(PORT, '0.0.0.0', () => console.log(`CRM running on port ${PORT}`));
