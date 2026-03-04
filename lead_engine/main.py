@@ -3,7 +3,7 @@ All Things Automated — Lead Engine
 Sarasota FL | Smart Home & Lighting Control
 """
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request, Form
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -24,6 +24,12 @@ app.mount("/static", StaticFiles(directory="dashboard/static"), name="static")
 @app.on_event("startup")
 def startup():
     init_db()
+
+
+# Service worker must be served from root scope to control the full app
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse("dashboard/static/sw.js", media_type="application/javascript")
 
 
 # ─────────────────────────────────────────────

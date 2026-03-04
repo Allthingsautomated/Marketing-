@@ -2,8 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}ATA Lead Engine{% endblock %} — All Things Automated</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>{% block title %}ATA Leads{% endblock %} — All Things Automated</title>
+
+  <!-- PWA / iOS -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#0f1117" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ATA Leads" />
+
+  <!-- Apple touch icons -->
+  <link rel="apple-touch-icon" href="/static/icons/icon-180.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/static/icons/icon-120.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="/static/icons/icon-167.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/icon-180.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="/static/favicon.ico" />
+
   <link rel="stylesheet" href="/static/css/app.css" />
 </head>
 <body>
@@ -47,5 +66,10 @@
   <div id="toast" class="toast hidden"></div>
   <script src="/static/js/app.js"></script>
   {% block scripts %}{% endblock %}
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
 </html>
