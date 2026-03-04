@@ -3,31 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}AI Lead Engine{% endblock %} — All Things Automated</title>
+  <title>{% block title %}ATA Lead Engine{% endblock %} — All Things Automated</title>
   <link rel="stylesheet" href="/static/css/app.css" />
 </head>
 <body>
   <nav class="sidebar">
     <div class="logo">
       <span class="logo-icon">⚡</span>
-      <span class="logo-text">Lead Engine</span>
+      <div>
+        <div class="logo-text">All Things Automated</div>
+        <div class="logo-sub">Lead Engine</div>
+      </div>
     </div>
     <ul class="nav-links">
       <li><a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
         <span class="icon">📊</span> Dashboard
       </a></li>
-      <li><a href="/leads" class="nav-link {% if '/leads' in request.url.path %}active{% endif %}">
-        <span class="icon">🎯</span> All Leads
+      <li><a href="/leads" class="nav-link {% if request.url.path.startswith('/leads') %}active{% endif %}">
+        <span class="icon">🏗️</span> All Leads
       </a></li>
-      <li><a href="/search" class="nav-link {% if '/search' in request.url.path %}active{% endif %}">
-        <span class="icon">🔍</span> Find Leads
+      <li><a href="/search" class="nav-link {% if request.url.path == '/search' %}active{% endif %}">
+        <span class="icon">🔍</span> Run Search
       </a></li>
       <li><a href="/api/leads/export/csv" class="nav-link">
         <span class="icon">📥</span> Export CSV
       </a></li>
     </ul>
     <div class="sidebar-footer">
-      <span class="version">v1.0 · All Things Automated</span>
+      Jorge Romero · Sarasota FL
     </div>
   </nav>
 

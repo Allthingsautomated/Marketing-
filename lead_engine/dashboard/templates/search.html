@@ -1,120 +1,111 @@
 {% extends "base.html" %}
-{% block title %}Find Leads{% endblock %}
-{% block page_title %}Find New Leads{% endblock %}
+{% block title %}Run Search{% endblock %}
+{% block page_title %}Run Search{% endblock %}
 
 {% block content %}
-<div class="card search-card">
-  <p class="search-desc">Tell the AI what type of business to find and where. It will scrape Google Maps + Yelp, analyze every website, and score each lead automatically.</p>
 
-  <form id="searchForm" onsubmit="startSearch(event)">
+<!-- One-Click Category Search -->
+<div class="card">
+  <h2 style="margin-bottom:.25rem">One-Click Search</h2>
+  <p class="muted-sm" style="margin-bottom:1.25rem">Select a category + market to run all search queries automatically.</p>
+
+  <div class="one-click-grid">
+    {% for cat_key, cat in categories.items() %}
+    <div class="one-click-col">
+      <div class="one-click-label">{{ cat.label }}</div>
+      {% for market in markets %}
+      <button class="market-btn" onclick="launchSearch('{{ cat_key }}', '{{ market }}')">
+        {{ market.split(',')[0] }}
+      </button>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="launchStatus" class="launch-status hidden" style="margin-top:1rem">
+    <div class="spinner-sm"></div>
+    <span id="launchMsg">Starting search...</span>
+  </div>
+</div>
+
+<!-- Custom Search -->
+<div class="card">
+  <h2 style="margin-bottom:.25rem">Custom Search</h2>
+  <p class="muted-sm" style="margin-bottom:1.25rem">Enter any keyword and location to search Google Maps.</p>
+
+  <form id="searchForm" onsubmit="startCustomSearch(event)">
     <div class="form-grid">
       <div class="form-group">
-        <label>What business type? *</label>
-        <input type="text" id="query" name="query" placeholder="e.g. restaurant, hair salon, dentist, contractor"
-               class="form-input" required />
+        <label>Search Term</label>
+        <input type="text" id="query" placeholder="e.g. luxury home builder" class="form-input" required />
       </div>
       <div class="form-group">
-        <label>Location *</label>
-        <input type="text" id="location" name="location" placeholder="e.g. Miami FL, Chicago, Austin Texas"
-               class="form-input" required />
+        <label>Location</label>
+        <input type="text" id="location" placeholder="e.g. Sarasota, FL" class="form-input" required value="Sarasota, FL" />
       </div>
       <div class="form-group">
-        <label>Industry Label (optional)</label>
-        <input type="text" id="industry" name="industry" placeholder="e.g. Restaurant & Food"
-               class="form-input" />
+        <label>Category Tag (optional)</label>
+        <select id="category" class="form-input">
+          <option value="">— None —</option>
+          {% for key, cat in categories.items() %}
+          <option value="{{ key }}">{{ cat.label }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
-        <label>Max leads per source</label>
-        <select id="max_per_source" name="max_per_source" class="form-input">
+        <label>Max Results</label>
+        <select id="max_per_source" class="form-input">
           <option value="10">10 (fast)</option>
-          <option value="20" selected>20 (recommended)</option>
-          <option value="50">50 (thorough)</option>
+          <option value="20" selected>20</option>
+          <option value="40">40 (thorough)</option>
         </select>
       </div>
     </div>
-
-    <div class="form-group">
-      <label>Sources</label>
-      <div class="checkbox-group">
-        <label class="checkbox-label">
-          <input type="checkbox" name="sources" value="google_maps" checked /> Google Maps (Text + Nearby)
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" name="sources" value="yellow_pages" checked /> Google Type Search (broader coverage)
-        </label>
-      </div>
-    </div>
-
-    <button type="submit" class="btn btn-primary btn-large" id="searchBtn">
-      🔍 Find Leads Now
-    </button>
+    <button type="submit" class="btn btn-primary btn-large" id="searchBtn">Search Google Maps</button>
   </form>
 
-  <div id="searchStatus" class="search-status hidden">
+  <div id="customStatus" class="search-status hidden" style="margin-top:1rem">
     <div class="spinner"></div>
-    <div id="statusMsg">Starting search...</div>
+    <div id="customMsg">Starting...</div>
   </div>
 </div>
 
-<!-- Quick Searches -->
-<div class="card">
-  <h3>Quick Search Ideas</h3>
-  <div class="quick-searches">
-    {% for item in [
-      ('restaurants', 'Miami FL'),
-      ('hair salon', 'Los Angeles CA'),
-      ('dentist', 'Houston TX'),
-      ('real estate agent', 'Phoenix AZ'),
-      ('gym fitness', 'New York NY'),
-      ('plumber', 'Dallas TX'),
-      ('auto repair', 'Chicago IL'),
-      ('lawyer attorney', 'Atlanta GA'),
-    ] %}
-    <button class="quick-btn" onclick="fillSearch('{{ item[0] }}', '{{ item[1] }}')">
-      {{ item[0] }} · {{ item[1] }}
-    </button>
-    {% endfor %}
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-async function startSearch(e) {
-  e.preventDefault();
-  const query = document.getElementById("query").value;
-  const location = document.getElementById("location").value;
-  const industry = document.getElementById("industry").value;
-  const maxPerSource = document.getElementById("max_per_source").value;
-  const sources = [...document.querySelectorAll('input[name="sources"]:checked')].map(el => el.value).join(",");
-
+async function launchSearch(category, market) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '...';
   const fd = new FormData();
-  fd.append("query", query);
-  fd.append("location", location);
-  fd.append("industry", industry);
-  fd.append("max_per_source", maxPerSource);
-  fd.append("sources", sources);
-
-  document.getElementById("searchBtn").disabled = true;
-  document.getElementById("searchStatus").classList.remove("hidden");
-  document.getElementById("statusMsg").textContent = `Searching for "${query}" in "${location}"...`;
-
-  const r = await fetch("/api/search", {method: "POST", body: fd});
+  fd.append("category", category);
+  fd.append("market", market);
+  document.getElementById("launchStatus").classList.remove("hidden");
+  document.getElementById("launchMsg").textContent = `Searching in ${market}...`;
+  const r = await fetch("/api/search/category", {method: "POST", body: fd});
   const data = await r.json();
-
-  document.getElementById("statusMsg").textContent =
-    data.message + " This runs in the background — check All Leads in 1-2 minutes.";
-  showToast("Search started! Leads will appear automatically.");
-
-  setTimeout(() => {
-    window.location.href = "/leads";
-  }, 3000);
+  document.getElementById("launchMsg").textContent = data.message + " Check All Leads in 1–2 min.";
+  showToast(data.message);
+  btn.disabled = false;
+  btn.textContent = market.split(',')[0];
 }
 
-function fillSearch(query, location) {
-  document.getElementById("query").value = query;
-  document.getElementById("location").value = location;
-  document.getElementById("query").focus();
+async function startCustomSearch(e) {
+  e.preventDefault();
+  const fd = new FormData();
+  fd.append("query", document.getElementById("query").value);
+  fd.append("location", document.getElementById("location").value);
+  fd.append("category", document.getElementById("category").value);
+  fd.append("max_per_source", document.getElementById("max_per_source").value);
+  document.getElementById("searchBtn").disabled = true;
+  document.getElementById("customStatus").classList.remove("hidden");
+  document.getElementById("customMsg").textContent = "Search running in background...";
+  const r = await fetch("/api/search", {method: "POST", body: fd});
+  const data = await r.json();
+  document.getElementById("customMsg").textContent = data.message + " Redirecting to leads...";
+  showToast("Search started!");
+  setTimeout(() => window.location.href = "/leads", 2500);
 }
 </script>
 {% endblock %}

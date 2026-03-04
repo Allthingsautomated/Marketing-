@@ -4,48 +4,69 @@
 
 {% block top_actions %}
   <a href="/leads" class="btn btn-secondary">← Back</a>
-  <button onclick="generateEmail()" class="btn btn-primary">Generate Outreach Email</button>
+  <button onclick="copyEmail()" class="btn btn-primary">Copy Intro Email</button>
 {% endblock %}
 
 {% block content %}
 <div class="detail-grid">
+
   <!-- Left Column -->
   <div class="detail-left">
 
-    <!-- Score Card -->
-    <div class="card score-card">
-      <div class="big-score {{ 'high' if lead.ai_score >= 70 else 'medium' if lead.ai_score >= 40 else 'low' }}">
-        {{ "%.0f"|format(lead.ai_score or 0) }}
-      </div>
-      <div class="score-label">AI Lead Score</div>
-      <div class="opp-score">
-        <span>Opportunity: <strong>{{ "%.0f"|format(lead.opportunity_score or 0) }}/100</strong></span>
-      </div>
-      <div class="priority-badge">{{ lead.ai_reasoning or 'No analysis yet' }}</div>
-    </div>
-
-    <!-- Contact Info -->
+    <!-- Category Badge -->
     <div class="card">
-      <h3>Contact Info</h3>
-      <div class="info-list">
-        {% if lead.phone %}<div class="info-row"><span class="info-label">Phone</span><span>{{ lead.phone }}</span></div>{% endif %}
-        {% if lead.email %}<div class="info-row"><span class="info-label">Email</span><span>{{ lead.email }}</span></div>{% endif %}
-        {% if lead.website %}<div class="info-row"><span class="info-label">Website</span><a href="{{ lead.website }}" target="_blank">{{ lead.website }}</a></div>{% endif %}
-        <div class="info-row"><span class="info-label">Address</span><span>{{ lead.address }}, {{ lead.city }}, {{ lead.state }} {{ lead.zip_code }}</span></div>
+      <span class="tag tag-{{ lead.category }} tag-lg">{{ cat_label }}</span>
+      <div class="info-list" style="margin-top:1rem">
+        {% if lead.owner_name %}
+        <div class="info-row">
+          <span class="info-label">Owner / Contact</span>
+          <span class="info-val">{{ lead.owner_name }}</span>
+        </div>
+        {% endif %}
+        {% if lead.phone %}
+        <div class="info-row">
+          <span class="info-label">Phone</span>
+          <a href="tel:{{ lead.phone }}" class="info-val">{{ lead.phone }}</a>
+        </div>
+        {% endif %}
+        {% if lead.email %}
+        <div class="info-row">
+          <span class="info-label">Email</span>
+          <a href="mailto:{{ lead.email }}" class="info-val">{{ lead.email }}</a>
+        </div>
+        {% endif %}
+        {% if lead.website %}
+        <div class="info-row">
+          <span class="info-label">Website</span>
+          <a href="{{ lead.website }}" target="_blank" class="info-val">{{ lead.website }}</a>
+        </div>
+        {% endif %}
+        {% if lead.address %}
+        <div class="info-row">
+          <span class="info-label">Address</span>
+          <span class="info-val">{{ lead.address }}, {{ lead.city }}, {{ lead.state }} {{ lead.zip_code }}</span>
+        </div>
+        {% endif %}
+        {% if lead.google_rating %}
+        <div class="info-row">
+          <span class="info-label">Google</span>
+          <span class="info-val">★ {{ lead.google_rating }} · {{ lead.google_review_count or 0 }} reviews</span>
+        </div>
+        {% endif %}
       </div>
     </div>
 
     <!-- Status & Notes -->
     <div class="card">
-      <h3>Status</h3>
-      <select id="statusSelect" class="filter-input" onchange="updateStatus({{ lead.id }}, this.value)">
-        {% for s in ['new', 'contacted', 'qualified', 'converted', 'lost'] %}
-        <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+      <h3>Pipeline Status</h3>
+      <select id="statusSelect" class="filter-input" onchange="updateStatus({{ lead.id }}, this.value)" style="margin-top:.5rem">
+        {% for s in statuses %}
+        <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s|replace('_',' ')|title }}</option>
         {% endfor %}
       </select>
 
-      <h3 style="margin-top:1rem">Notes</h3>
-      <textarea id="notesArea" class="notes-area" placeholder="Add notes about this lead...">{{ lead.notes or '' }}</textarea>
+      <h3 style="margin-top:1.25rem">Notes</h3>
+      <textarea id="notesArea" class="notes-area" placeholder="Meeting notes, follow-up reminders...">{{ lead.notes or '' }}</textarea>
       <button onclick="saveNotes({{ lead.id }})" class="btn btn-primary" style="margin-top:.5rem">Save Notes</button>
     </div>
   </div>
@@ -53,77 +74,32 @@
   <!-- Right Column -->
   <div class="detail-right">
 
-    <!-- Pain Points -->
+    <!-- Intro Email -->
     <div class="card">
-      <h3>Pain Points (Why They Need Us)</h3>
-      <ul class="pain-list">
-        {% for point in (lead.pain_points or []) %}
-        <li class="pain-item">⚠️ {{ point }}</li>
-        {% else %}
-        <li class="pain-item muted">No pain points analyzed yet</li>
-        {% endfor %}
-      </ul>
+      <div class="card-header">
+        <h3>Jorge's Intro Email</h3>
+        <button onclick="copyEmail()" class="btn btn-sm btn-secondary">Copy</button>
+      </div>
+      <pre id="emailContent" class="email-preview">{{ intro_email }}</pre>
     </div>
 
-    <!-- Marketing Signals -->
+    <!-- Source Info -->
     <div class="card">
-      <h3>Marketing Signals</h3>
-      <div class="signals-grid">
-        <div class="signal {{ 'on' if lead.has_meta_ads else 'off' }}">
-          <span class="signal-icon">{{ '✅' if lead.has_meta_ads else '❌' }}</span>
-          <span>Meta Pixel</span>
-        </div>
-        <div class="signal {{ 'on' if lead.has_google_ads else 'off' }}">
-          <span class="signal-icon">{{ '✅' if lead.has_google_ads else '❌' }}</span>
-          <span>Google Ads</span>
-        </div>
-        <div class="signal {{ 'on' if lead.has_facebook else 'off' }}">
-          <span class="signal-icon">{{ '✅' if lead.has_facebook else '❌' }}</span>
-          <span>Facebook</span>
-        </div>
-        <div class="signal {{ 'on' if lead.has_instagram else 'off' }}">
-          <span class="signal-icon">{{ '✅' if lead.has_instagram else '❌' }}</span>
-          <span>Instagram</span>
-        </div>
-      </div>
-      <div class="website-score-row">
-        <span>Website Quality</span>
-        <div class="score-bar inline">
-          <div class="score-fill {{ 'high' if lead.website_score >= 70 else 'medium' if lead.website_score >= 40 else 'low' }}"
-               style="width: {{ lead.website_score or 0 }}%"></div>
-          <span class="score-num">{{ lead.website_score or 0 }}/100</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Reviews -->
-    <div class="card">
-      <h3>Reviews & Reputation</h3>
-      <div class="reviews-row">
-        {% if lead.google_rating %}
-        <div class="review-block">
-          <div class="review-source">Google</div>
-          <div class="review-rating">★ {{ lead.google_rating }}</div>
-          <div class="review-count">{{ lead.google_review_count or 0 }} reviews</div>
-        </div>
-        {% endif %}
-        {% if lead.yelp_rating %}
-        <div class="review-block">
-          <div class="review-source">Yelp</div>
-          <div class="review-rating">★ {{ lead.yelp_rating }}</div>
-          <div class="review-count">{{ lead.yelp_review_count or 0 }} reviews</div>
+      <h3>Source Details</h3>
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">Source</span><span class="info-val">{{ lead.source or '—' }}</span></div>
+        <div class="info-row"><span class="info-label">Added</span><span class="info-val">{{ lead.created_at.strftime('%B %d, %Y') if lead.created_at else '—' }}</span></div>
+        {% if lead.has_facebook or lead.has_instagram %}
+        <div class="info-row">
+          <span class="info-label">Social</span>
+          <span class="info-val">
+            {% if lead.has_facebook %}Facebook {% endif %}
+            {% if lead.has_instagram %}Instagram{% endif %}
+          </span>
         </div>
         {% endif %}
       </div>
     </div>
-
-    <!-- AI Outreach Email -->
-    <div class="card" id="emailCard" style="display:none">
-      <h3>Generated Outreach Email</h3>
-      <pre id="emailContent" class="email-preview"></pre>
-      <button onclick="copyEmail()" class="btn btn-secondary">Copy to Clipboard</button>
-    </div>
-
   </div>
 </div>
 {% endblock %}
@@ -138,25 +114,14 @@ async function updateStatus(leadId, status) {
 }
 
 async function saveNotes(leadId) {
-  const notes = document.getElementById("notesArea").value;
   const fd = new FormData();
-  fd.append("notes", notes);
+  fd.append("notes", document.getElementById("notesArea").value);
   await fetch(`/api/leads/${leadId}/notes`, {method: "POST", body: fd});
   showToast("Notes saved");
 }
 
-async function generateEmail() {
-  showToast("Generating personalized email...");
-  const r = await fetch("/api/leads/{{ lead.id }}/email");
-  const data = await r.json();
-  document.getElementById("emailContent").textContent = data.email;
-  document.getElementById("emailCard").style.display = "block";
-  document.getElementById("emailCard").scrollIntoView({behavior: "smooth"});
-}
-
 function copyEmail() {
-  const text = document.getElementById("emailContent").textContent;
-  navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(document.getElementById("emailContent").textContent);
   showToast("Email copied to clipboard!");
 }
 </script>

@@ -9,7 +9,7 @@ Web scraper — analyzes a business's website to detect:
 import re
 import requests
 from bs4 import BeautifulSoup
-from typing import Dict
+from typing import Dict, Optional
 from urllib.parse import urlparse
 import time
 
@@ -117,10 +117,18 @@ def analyze_website(url: str, timeout: int = 10) -> Dict:
     )
 
     # --- Email & Phone ---
-    email_match = re.search(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", html)
-    result["email_found"] = email_match.group(0) if email_match else None
+    emails = re.findall(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", html)
+    # Filter out common non-contact emails
+    contact_emails = [e for e in emails if not any(x in e.lower() for x in [
+        "example", "domain", "sentry", "wix", "adobe", "jquery", "schema"
+    ])]
+    result["email_found"] = contact_emails[0] if contact_emails else None
+
     phone_match = re.search(r"(\+?1?\s?)?(\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4})", html)
     result["phone_found"] = phone_match.group(0).strip() if phone_match else None
+
+    # --- Owner/Contact Name ---
+    result["owner_name"] = _extract_owner_name(soup, html)
 
     # --- Page Metadata ---
     title = soup.find("title")
@@ -153,6 +161,36 @@ def analyze_website(url: str, timeout: int = 10) -> Dict:
     result["website_quality_score"] = _score_website(result, soup, html)
 
     return result
+
+
+def _extract_owner_name(soup: BeautifulSoup, html: str) -> Optional[str]:
+    """
+    Try to find the owner/principal name from About or Team sections.
+    Looks for common patterns like "Founded by X", "Owner: X", etc.
+    """
+    # Pattern: "Owner", "Founder", "Principal", "President", "CEO" followed by a name
+    patterns = [
+        r"(?:owner|founder|principal|president|ceo|director|operator)[:\s,]+([A-Z][a-z]+ [A-Z][a-z]+)",
+        r"([A-Z][a-z]+ [A-Z][a-z]+),\s*(?:owner|founder|principal|president|ceo)",
+        r"(?:by|with)\s+([A-Z][a-z]+ [A-Z][a-z]+)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html, re.IGNORECASE)
+        if match:
+            name = match.group(1).strip()
+            # Basic sanity check — skip if it looks like a company or generic phrase
+            skip_words = {"All Rights", "Privacy Policy", "Terms Of", "Cookie Policy"}
+            if name not in skip_words and len(name.split()) <= 4:
+                return name
+
+    # Check meta tags for author
+    author_meta = soup.find("meta", attrs={"name": "author"})
+    if author_meta:
+        content = author_meta.get("content", "").strip()
+        if content and len(content.split()) <= 4:
+            return content
+
+    return None
 
 
 def _score_website(data: Dict, soup: BeautifulSoup, html: str) -> int:

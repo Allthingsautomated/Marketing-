@@ -3,93 +3,143 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block top_actions %}
-  <a href="/search" class="btn btn-primary">+ Find New Leads</a>
+  <a href="/search" class="btn btn-primary">+ Run Search</a>
+  <a href="/api/leads/export/csv" class="btn btn-secondary">Export CSV</a>
 {% endblock %}
 
 {% block content %}
-<!-- Stats Cards -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-value">{{ stats.total }}</div>
-    <div class="stat-label">Total Leads</div>
+
+<!-- Pipeline Status Row -->
+<div class="stats-grid-6">
+  {% for label, key, color in [
+    ('New', 'new', 'blue'),
+    ('Contacted', 'contacted', 'yellow'),
+    ('Meeting Set', 'meeting_scheduled', 'purple'),
+    ('Proposal Sent', 'proposal_sent', 'orange'),
+    ('Closed', 'closed', 'green'),
+    ('Lost', 'lost', 'red'),
+  ] %}
+  <div class="stat-card {{ color }}">
+    <div class="stat-value">{{ status_counts.get(key, 0) }}</div>
+    <div class="stat-label">{{ label }}</div>
   </div>
-  <div class="stat-card new">
-    <div class="stat-value">{{ stats.new }}</div>
-    <div class="stat-label">New</div>
-  </div>
-  <div class="stat-card contacted">
-    <div class="stat-value">{{ stats.contacted }}</div>
-    <div class="stat-label">Contacted</div>
-  </div>
-  <div class="stat-card qualified">
-    <div class="stat-value">{{ stats.qualified }}</div>
-    <div class="stat-label">Qualified</div>
-  </div>
-  <div class="stat-card converted">
-    <div class="stat-value">{{ stats.converted }}</div>
-    <div class="stat-label">Converted</div>
-  </div>
+  {% endfor %}
 </div>
 
+<!-- Category Breakdown + Quick Search -->
 <div class="two-col">
-  <!-- Top Leads -->
+
+  <!-- Category Stats -->
   <div class="card">
     <div class="card-header">
-      <h2>Top Leads by AI Score</h2>
-      <a href="/leads" class="link-sm">View All →</a>
+      <h2>Leads by Category</h2>
+      <span class="muted-sm">{{ total }} total</span>
     </div>
-    <div class="lead-list">
-      {% for lead in top_leads %}
-      <a href="/leads/{{ lead.id }}" class="lead-row">
-        <div class="lead-info">
-          <div class="lead-name">{{ lead.business_name }}</div>
-          <div class="lead-meta">{{ lead.industry }} · {{ lead.city }}, {{ lead.state }}</div>
-        </div>
-        <div class="lead-score-badge score-{{ 'high' if lead.ai_score >= 70 else 'medium' if lead.ai_score >= 40 else 'low' }}">
-          {{ "%.0f"|format(lead.ai_score) }}
-        </div>
-      </a>
-      {% else %}
-      <div class="empty-state">No leads yet. <a href="/search">Find some →</a></div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Recent Searches -->
-  <div class="card">
-    <div class="card-header">
-      <h2>Recent Searches</h2>
-      <a href="/search" class="link-sm">New Search →</a>
-    </div>
-    <div class="session-list">
-      {% for s in recent_sessions %}
-      <div class="session-row">
-        <div class="session-info">
-          <div class="session-query">{{ s.query }} in {{ s.location }}</div>
-          <div class="session-meta">{{ s.leads_found }} leads · Avg score: {{ "%.0f"|format(s.avg_score) }}</div>
-        </div>
-        <div class="session-time">{{ s.created_at.strftime('%b %d') }}</div>
+    {% for key, cat in categories.items() %}
+    {% set count = category_counts.get(key, 0) %}
+    {% set goal = cat.goal %}
+    <div class="cat-row">
+      <div class="cat-info">
+        <a href="/leads?category={{ key }}" class="cat-name">{{ cat.label }}</a>
+        <span class="muted-sm">{{ count }} / {{ goal }}</span>
       </div>
-      {% else %}
-      <div class="empty-state">No searches yet.</div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-
-<!-- Pipeline Visual -->
-<div class="card pipeline-card">
-  <div class="card-header"><h2>Lead Pipeline</h2></div>
-  <div class="pipeline">
-    {% for stage, count in [('New', stats.new), ('Contacted', stats.contacted), ('Qualified', stats.qualified), ('Converted', stats.converted)] %}
-    <div class="pipeline-stage">
-      <div class="pipeline-count">{{ count }}</div>
-      <div class="pipeline-bar">
-        <div class="pipeline-fill" style="height: {{ [count * 10, 100]|min }}px"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ [count * 100 // goal, 100]|min }}%"></div>
       </div>
-      <div class="pipeline-label">{{ stage }}</div>
     </div>
     {% endfor %}
   </div>
+
+  <!-- Quick Launch Search -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Quick Launch Search</h2>
+      <a href="/search" class="link-sm">Custom →</a>
+    </div>
+    <div class="quick-grid">
+      {% for cat_key, cat in categories.items() %}
+      {% for market in markets[:3] %}
+      <button class="quick-btn" onclick="launchSearch('{{ cat_key }}', '{{ market }}')">
+        {{ cat.label.split(' ')[0] }}s · {{ market.split(',')[0] }}
+      </button>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    <div id="launchStatus" class="launch-status hidden">
+      <div class="spinner-sm"></div>
+      <span id="launchMsg">Starting...</span>
+    </div>
+  </div>
 </div>
+
+<!-- Recent Leads -->
+<div class="card">
+  <div class="card-header">
+    <h2>Recent Leads</h2>
+    <a href="/leads" class="link-sm">View All →</a>
+  </div>
+  <table class="leads-table">
+    <thead>
+      <tr>
+        <th>Business</th>
+        <th>Owner</th>
+        <th>Category</th>
+        <th>Location</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lead in recent_leads %}
+      <tr>
+        <td><a href="/leads/{{ lead.id }}" class="lead-name-link">{{ lead.business_name }}</a></td>
+        <td class="muted-sm">{{ lead.owner_name or '—' }}</td>
+        <td><span class="tag tag-{{ lead.category }}">{{ categories.get(lead.category, {}).get('label', lead.category or '—') }}</span></td>
+        <td class="muted-sm">{{ lead.city }}, {{ lead.state }}</td>
+        <td class="muted-sm">{{ lead.phone or '—' }}</td>
+        <td class="muted-sm">{{ lead.email or '—' }}</td>
+        <td><span class="status-badge status-{{ lead.status }}">{{ lead.status|replace('_', ' ')|title }}</span></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="empty-state">No leads yet. <a href="/search">Run a search →</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Recent Search Sessions -->
+<div class="card">
+  <div class="card-header"><h2>Recent Search Sessions</h2></div>
+  <div class="session-list">
+    {% for s in recent_sessions %}
+    <div class="session-row">
+      <div class="session-info">
+        <div class="session-query">{{ s.query }} — {{ s.location }}</div>
+        <div class="session-meta">{{ s.leads_found }} leads found · {{ s.category or 'general' }}</div>
+      </div>
+      <div class="session-time">{{ s.created_at.strftime('%b %d') }}</div>
+    </div>
+    {% else %}
+    <div class="empty-state">No searches yet.</div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function launchSearch(category, market) {
+  const fd = new FormData();
+  fd.append("category", category);
+  fd.append("market", market);
+  document.getElementById("launchStatus").classList.remove("hidden");
+  document.getElementById("launchMsg").textContent = `Searching ${category} in ${market}...`;
+  const r = await fetch("/api/search/category", {method: "POST", body: fd});
+  const data = await r.json();
+  document.getElementById("launchMsg").textContent = data.message + " Check All Leads in 1–2 min.";
+  showToast(data.message);
+}
+</script>
 {% endblock %}
