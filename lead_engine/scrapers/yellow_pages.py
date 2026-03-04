@@ -1,120 +1,204 @@
 """
-Yellow Pages scraper — free, no API key needed.
-Scrapes yellowpages.com for local businesses.
-Complements Google Maps by surfacing different businesses.
+Google Places Type Search — replaces Yellow Pages.
+Uses the Places API (New) with includedTypes for broader coverage,
+surfacing businesses the text search misses.
 """
 import requests
-import re
 import time
-from bs4 import BeautifulSoup
-from typing import List, Dict
-from urllib.parse import quote_plus
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import GOOGLE_PLACES_API_KEY
+from typing import List, Dict, Optional
 
+NEW_PLACES_BASE = "https://places.googleapis.com/v1/places"
+GEOCODE_BASE    = "https://maps.googleapis.com/maps/api/geocode/json"
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "en-US,en;q=0.9",
+FIELDS = ",".join([
+    "places.displayName",
+    "places.formattedAddress",
+    "places.nationalPhoneNumber",
+    "places.internationalPhoneNumber",
+    "places.websiteUri",
+    "places.rating",
+    "places.userRatingCount",
+    "places.businessStatus",
+    "places.types",
+    "places.location",
+    "places.id",
+])
+
+# Maps general query keywords → Google place types
+KEYWORD_TO_TYPES = {
+    "restaurant": ["restaurant", "food", "cafe", "bar"],
+    "salon":      ["hair_care", "beauty_salon", "spa"],
+    "dentist":    ["dentist", "dental_clinic"],
+    "doctor":     ["doctor", "hospital", "medical_clinic"],
+    "gym":        ["gym", "fitness_center", "sports_club"],
+    "plumber":    ["plumber", "home_improvement_store"],
+    "electrician":["electrician"],
+    "contractor": ["general_contractor", "roofing_contractor"],
+    "lawyer":     ["lawyer", "legal_services"],
+    "real estate":["real_estate_agency"],
+    "realtor":    ["real_estate_agency"],
+    "hotel":      ["lodging", "hotel"],
+    "auto":       ["car_repair", "car_dealer", "auto_parts_store"],
+    "car":        ["car_repair", "car_dealer", "car_wash"],
+    "retail":     ["clothing_store", "shoe_store", "department_store"],
+    "shop":       ["store", "shopping_mall"],
+    "cafe":       ["cafe", "coffee_shop", "bakery"],
+    "bar":        ["bar", "night_club"],
+    "pharmacy":   ["pharmacy", "drugstore"],
+    "vet":        ["veterinary_care"],
 }
 
 
 def search_businesses(query: str, location: str, max_results: int = 30) -> List[Dict]:
     """
-    Search Yellow Pages for businesses. No API key needed.
+    Search Google Places by business type for broader coverage.
+    Falls back to a text search with 'near <location>' if no type match.
     """
+    if not GOOGLE_PLACES_API_KEY:
+        print("[Google Type Search] No API key — skipping.")
+        return []
+
+    coords = _geocode(location)
+    if not coords:
+        print("[Google Type Search] Geocoding failed — skipping type search.")
+        return []
+
+    types = _query_to_types(query)
     results = []
-    page = 1
 
-    while len(results) < max_results:
-        url = (
-            f"https://www.yellowpages.com/search"
-            f"?search_terms={quote_plus(query)}"
-            f"&geo_location_terms={quote_plus(location)}"
-            f"&page={page}"
-        )
-        try:
-            resp = requests.get(url, headers=HEADERS, timeout=12)
-            if resp.status_code != 200:
-                print(f"[Yellow Pages] HTTP {resp.status_code} on page {page}")
+    if types:
+        for place_type in types[:2]:  # max 2 types to stay fast
+            batch = _search_by_type(place_type, coords, max_results // len(types[:2]) + 5)
+            results.extend(batch)
+            if len(results) >= max_results:
                 break
+            time.sleep(0.3)
+    else:
+        # Fallback: text search with different phrasing
+        results = _fallback_text_search(query, location, coords, max_results)
 
-            soup = BeautifulSoup(resp.text, "html.parser")
-            listings = soup.select("div.result")
+    # Deduplicate by place id
+    seen, unique = set(), []
+    for r in results:
+        pid = r.get("raw_data", {}).get("id", r["business_name"])
+        if pid not in seen:
+            seen.add(pid)
+            unique.append(r)
 
-            if not listings:
-                break
-
-            for listing in listings:
-                biz = _parse_listing(listing)
-                if biz and biz["business_name"]:
-                    results.append(biz)
-
-            # Check for next page
-            next_btn = soup.select_one("a.next")
-            if not next_btn or len(results) >= max_results:
-                break
-
-            page += 1
-            time.sleep(1)  # Polite delay
-
-        except Exception as e:
-            print(f"[Yellow Pages] Error: {e}")
-            break
-
-    print(f"[Yellow Pages] Found {len(results)} businesses")
-    return results[:max_results]
+    unique = unique[:max_results]
+    print(f"[Google Type Search] Found {len(unique)} businesses")
+    return unique
 
 
-def _parse_listing(listing) -> Dict:
+def _search_by_type(place_type: str, coords: Dict, max_results: int) -> List[Dict]:
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+        "X-Goog-FieldMask": FIELDS + ",nextPageToken",
+    }
+    body = {
+        "includedTypes": [place_type],
+        "maxResultCount": min(20, max_results),
+        "locationRestriction": {
+            "circle": {
+                "center": {"latitude": coords["lat"], "longitude": coords["lng"]},
+                "radius": 50000.0,
+            }
+        },
+    }
+    results = []
     try:
-        name_el = listing.select_one("a.business-name span") or listing.select_one(".business-name")
-        name = name_el.get_text(strip=True) if name_el else ""
+        resp = requests.post(
+            f"{NEW_PLACES_BASE}:searchNearby", json=body, headers=headers, timeout=10
+        )
+        if resp.status_code != 200:
+            err = resp.json().get("error", {}) if resp.text.strip() else {}
+            print(f"[Google Type Search] Error {resp.status_code}: {err.get('message', '')}")
+            return []
+        for place in resp.json().get("places", []):
+            results.append(_normalize(place, "google_type_search"))
+    except Exception as e:
+        print(f"[Google Type Search] Exception: {e}")
+    return results
 
-        phone_el = listing.select_one(".phones.phone.primary")
-        phone = phone_el.get_text(strip=True) if phone_el else ""
 
-        address_el = listing.select_one(".street-address")
-        city_el = listing.select_one(".locality")
-        address = address_el.get_text(strip=True) if address_el else ""
-        locality = city_el.get_text(strip=True) if city_el else ""
+def _fallback_text_search(query: str, location: str, coords: Dict, max_results: int) -> List[Dict]:
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+        "X-Goog-FieldMask": FIELDS,
+    }
+    body = {
+        "textQuery": f"best {query} near {location}",
+        "maxResultCount": min(20, max_results),
+        "locationBias": {
+            "circle": {
+                "center": {"latitude": coords["lat"], "longitude": coords["lng"]},
+                "radius": 50000.0,
+            }
+        },
+    }
+    results = []
+    try:
+        resp = requests.post(
+            f"{NEW_PLACES_BASE}:searchText", json=body, headers=headers, timeout=10
+        )
+        if resp.status_code == 200:
+            for place in resp.json().get("places", []):
+                results.append(_normalize(place, "google_type_search"))
+    except Exception as e:
+        print(f"[Google Type Search fallback] Exception: {e}")
+    return results
 
-        # Parse "City, ST  ZIP"
-        city, state, zip_code = "", "", ""
-        if locality:
-            parts = locality.split(",")
-            city = parts[0].strip() if parts else ""
-            if len(parts) > 1:
-                state_zip = parts[1].strip().split()
-                state = state_zip[0] if state_zip else ""
-                zip_code = state_zip[1] if len(state_zip) > 1 else ""
 
-        website_el = listing.select_one("a.track-visit-website")
-        website = website_el.get("href", "") if website_el else ""
-
-        category_els = listing.select(".categories a")
-        categories = [c.get_text(strip=True) for c in category_els]
-
-        rating_el = listing.select_one(".ratings .count")
-        review_count = None
-        if rating_el:
-            match = re.search(r"\d+", rating_el.get_text())
-            review_count = int(match.group()) if match else None
-
-        return {
-            "source": "yellow_pages",
-            "business_name": name,
-            "address": address,
-            "city": city,
-            "state": state,
-            "zip_code": zip_code,
-            "phone": phone,
-            "website": website,
-            "categories": categories,
-            "yp_review_count": review_count,
-            "raw_data": {},
-        }
+def _geocode(location: str) -> Optional[Dict]:
+    try:
+        resp = requests.get(
+            GEOCODE_BASE,
+            params={"address": location, "key": GOOGLE_PLACES_API_KEY},
+            timeout=10,
+        )
+        data = resp.json()
+        if data.get("status") == "OK" and data.get("results"):
+            loc = data["results"][0]["geometry"]["location"]
+            return {"lat": loc["lat"], "lng": loc["lng"]}
     except Exception:
-        return {}
+        pass
+    return None
+
+
+def _query_to_types(query: str) -> List[str]:
+    q = query.lower()
+    for keyword, types in KEYWORD_TO_TYPES.items():
+        if keyword in q:
+            return types
+    return []
+
+
+def _normalize(place: Dict, source: str) -> Dict:
+    address = place.get("formattedAddress", "")
+    parts   = [p.strip() for p in address.split(",")]
+    street    = parts[0] if parts else ""
+    city      = parts[1] if len(parts) > 1 else ""
+    state_zip = parts[2].strip() if len(parts) > 2 else ""
+    state     = state_zip.split(" ")[0] if state_zip else ""
+    zip_code  = state_zip.split(" ")[1] if len(state_zip.split(" ")) > 1 else ""
+    return {
+        "source": source,
+        "business_name": place.get("displayName", {}).get("text", ""),
+        "address": street,
+        "city": city,
+        "state": state,
+        "zip_code": zip_code,
+        "phone": place.get("nationalPhoneNumber") or place.get("internationalPhoneNumber", ""),
+        "website": place.get("websiteUri", ""),
+        "google_rating": place.get("rating"),
+        "google_review_count": place.get("userRatingCount"),
+        "business_status": place.get("businessStatus", ""),
+        "categories": place.get("types", []),
+        "raw_data": place,
+    }
