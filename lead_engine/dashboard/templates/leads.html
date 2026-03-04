@@ -25,6 +25,13 @@
       {% endfor %}
     </select>
 
+    <select name="city" class="filter-input">
+      <option value="">All Cities</option>
+      {% for c in cities %}
+      <option value="{{ c }}" {% if filters.city == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+
     <input type="number" name="min_score" placeholder="Min Score (0-100)"
            value="{{ filters.min_score or '' }}" class="filter-input" min="0" max="100" />
 

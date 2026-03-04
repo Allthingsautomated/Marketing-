@@ -57,6 +57,7 @@ async def leads_page(
     request: Request,
     status: Optional[str] = None,
     industry: Optional[str] = None,
+    city: Optional[str] = None,
     min_score: Optional[float] = None,
     page: int = 1,
     db: Session = Depends(get_db)
@@ -66,6 +67,8 @@ async def leads_page(
         query = query.filter(Lead.status == status)
     if industry:
         query = query.filter(Lead.industry.ilike(f"%{industry}%"))
+    if city:
+        query = query.filter(Lead.city.ilike(f"%{city}%"))
     if min_score:
         query = query.filter(Lead.ai_score >= min_score)
 
@@ -73,6 +76,7 @@ async def leads_page(
     per_page = 25
     leads = query.order_by(Lead.ai_score.desc()).offset((page - 1) * per_page).limit(per_page).all()
     industries = [r[0] for r in db.query(Lead.industry).distinct().all() if r[0]]
+    cities = sorted([r[0] for r in db.query(Lead.city).distinct().all() if r[0]])
 
     return templates.TemplateResponse("leads.html", {
         "request": request,
@@ -80,8 +84,9 @@ async def leads_page(
         "total": total,
         "page": page,
         "per_page": per_page,
-        "filters": {"status": status, "industry": industry, "min_score": min_score},
+        "filters": {"status": status, "industry": industry, "city": city, "min_score": min_score},
         "industries": industries,
+        "cities": cities,
     })
 
 
