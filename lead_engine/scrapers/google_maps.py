@@ -128,7 +128,7 @@ def _nearby_search(query: str, coords: Dict, radius_meters: int, max_results: in
         body = {
             "textQuery": query,
             "maxResultCount": min(20, max_results - len(results)),
-            "locationRestriction": {
+            "locationBias": {
                 "circle": {
                     "center": {"latitude": coords["lat"], "longitude": coords["lng"]},
                     "radius": float(radius_meters),
