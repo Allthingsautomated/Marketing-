@@ -8,12 +8,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('crm_token');
-    const saved = localStorage.getItem('crm_user');
-    if (token && saved) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(JSON.parse(saved));
-    }
+    const mockUser = { id: '1', name: 'Owner', email: 'jorge@allthingsautomated.org', role: 'owner' };
+    setUser(mockUser);
     setLoading(false);
   }, []);
 
