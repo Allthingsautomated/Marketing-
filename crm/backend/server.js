@@ -34,6 +34,22 @@ app.use('/api/integrations', verifyToken, integrationsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
+// Temporary debug endpoint — remove after login is confirmed working
+app.get('/api/debug', (req, res) => {
+  const fs = require('fs');
+  const usersPath = path.join(__dirname, 'data/users.json');
+  const exists = fs.existsSync(usersPath);
+  const users = exists ? JSON.parse(fs.readFileSync(usersPath, 'utf8')) : [];
+  res.json({
+    usersFileExists: exists,
+    usersFilePath: usersPath,
+    userCount: users.length,
+    users: users.map(u => ({ id: u.id, email: u.email, role: u.role, hasPassword: !!u.password })),
+    jwtSecretSet: !!process.env.JWT_SECRET,
+    nodeEnv: process.env.NODE_ENV,
+  });
+});
+
 // Serve React frontend in production
 const frontendDist = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendDist));
