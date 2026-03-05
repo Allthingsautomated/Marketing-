@@ -43,9 +43,6 @@ export default function Login() {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 20 }}>
-          Default password: <code>admin123</code> — change after first login
-        </p>
       </div>
     </div>
   );
